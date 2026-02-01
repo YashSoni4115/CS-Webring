@@ -1,12 +1,11 @@
-.webglLayer {
+.layer {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 6;
   pointer-events: none;
-  overflow: hidden;
 }
 
-.webglLayer canvas {
+.layer canvas {
   width: 100%;
   height: 100%;
   display: block;

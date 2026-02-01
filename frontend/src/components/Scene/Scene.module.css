@@ -1,5 +1,5 @@
 .scene {
-  height: 240vh; /* controls how long the takeover feels */
+  height: 260vh;
   position: relative;
 }
 
@@ -8,16 +8,14 @@
   top: 0;
   height: 100vh;
   overflow: hidden;
-  background: radial-gradient(
-    circle at 50% 45%,
-    rgba(75, 46, 131, 0.25),
-    #0b0c1a 65%
-  );
+  background: radial-gradient(circle at 50% 45%, rgba(75, 46, 131, 0.25), #050510 70%);
 }
 
 .balls {
   position: absolute;
   inset: 0;
+  z-index: 1;
+  transition: opacity 220ms ease;
 }
 
 .listLayer {
@@ -26,6 +24,45 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 10vh;
+  z-index: 2;
   pointer-events: auto;
+}
+
+.downArrow {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 10;
+
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(12, 12, 20, 0.45);
+
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 22px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  transition: transform 160ms ease, opacity 160ms ease, background 160ms ease;
+}
+
+.downArrow:hover {
+  transform: translateX(-50%) translateY(-3px);
+  background: rgba(18, 18, 30, 0.6);
+}
+
+.downArrow:active {
+  transform: translateX(-50%) translateY(-1px);
 }
