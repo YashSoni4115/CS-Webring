@@ -18,7 +18,6 @@ const rand = (min: number, max: number) => Math.random() * (max - min) + min;
 export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: number }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
 
-  // latest scatterAmount without rebuilding scene
   const scatterAmountRef = useRef(0);
   scatterAmountRef.current = clamp01(scatterAmount);
 
@@ -43,6 +42,9 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
     // @ts-ignore
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearAlpha(0);
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
+    renderer.domElement.style.display = "block";
     host.appendChild(renderer.domElement);
 
     // Lighting
@@ -60,10 +62,9 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
     fillLight.position.set(-7, -2, 6);
     scene.add(fillLight);
 
-    // Geometry
+    // Geometry + Materials
     const geometry = new THREE.SphereGeometry(1, 28, 22);
 
-    // Laurier materials (no instanceColor)
     const purpleMat = new THREE.MeshStandardMaterial({
       color: new THREE.Color("#4B2E83"),
       roughness: 0.32,
@@ -76,7 +77,7 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
       metalness: 0.08,
     });
 
-    // Settings
+    // Instances
     const COUNT = 46;
     const goldCount = Math.floor(COUNT / 3);
     const purpleCount = COUNT - goldCount;
@@ -90,7 +91,7 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
     scene.add(purpleMesh);
     scene.add(goldMesh);
 
-    // Physics constants
+    // Physics tuning
     const CENTER = new THREE.Vector3(0, 0, 0);
 
     const CLUSTER_RADIUS = 5.2;
@@ -100,25 +101,20 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
     const RESTITUTION = 0.72;
     const COLLISION_PASSES = 1;
 
-    // Continuous scatter tuning (driven by scatterAmount 0..1)
-    const OUTWARD_FORCE = 3.2; // outward accel scale
-    const DRAG_SCATTER = 0.992; // less damping while scattering
+    const OUTWARD_FORCE = 6.5;
+    const DRAG_SCATTER = 0.997;
     const MAX_SPEED_CLUSTER = 1.7;
-    const MAX_SPEED_SCATTER = 7.0;
+    const MAX_SPEED_SCATTER = 12.0;
 
-    // When scattering, kill far spheres to save CPU
     const OFFSCREEN_KILL_RADIUS = 20;
 
-    // When scatterAmount goes back near 0, revive and re-cluster
-    const REVIVE_THRESHOLD = 0.02;
-
-    // Bigger balls
+    // Ball sizes
     const R_MIN = 0.48;
     const R_MAX = 0.95;
 
-    // Mouse “hand” interaction (cylinder along camera Z, ignore Z distance)
+    // Mouse “hand” cylinder
     const HAND_RADIUS = 2.2;
-    const HAND_STRENGTH = 13.0;
+    const HAND_STRENGTH = 10.5;
     const HAND_DAMPING = 0.85;
 
     // Mouse mapping to z=0 plane
@@ -128,6 +124,9 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
 
     const raycaster = new THREE.Raycaster();
     const planeZ0 = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+
+    const lastHandPos = new THREE.Vector3(999, 999, 0);
+    let handSpeed = 0;
 
     const updateHandFromClientXY = (clientX: number, clientY: number) => {
       const rect = host.getBoundingClientRect();
@@ -154,20 +153,19 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
       handActive.value = true;
     };
 
-    const onPointerMove = (ev: PointerEvent) => {
-      updateHandFromClientXY(ev.clientX, ev.clientY);
-    };
+    const onPointerMove = (ev: PointerEvent) => updateHandFromClientXY(ev.clientX, ev.clientY);
 
-    const onScrollOrResize = () => {
+    const onScroll = () => {
       handActive.value = false;
       handPos.set(999, 999, 0);
+      lastHandPos.set(999, 999, 0);
+      handSpeed = 0;
     };
 
     window.addEventListener("pointermove", onPointerMove, { passive: true });
-    window.addEventListener("scroll", onScrollOrResize, { passive: true });
-    window.addEventListener("resize", onScrollOrResize);
+    window.addEventListener("scroll", onScroll, { passive: true });
 
-    // Build balls and assign mesh indices (2 purple, 1 gold)
+    // Balls
     let pIdx = 0;
     let gIdx = 0;
 
@@ -204,6 +202,7 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
       dummy.position.copy(b.pos);
       dummy.scale.setScalar(b.r);
       dummy.updateMatrix();
+
       if (b.isGold) goldMesh.setMatrixAt(b.meshIndex, dummy.matrix);
       else purpleMesh.setMatrixAt(b.meshIndex, dummy.matrix);
     };
@@ -212,11 +211,12 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
       const rect = host.getBoundingClientRect();
       const width = Math.max(1, rect.width);
       const height = Math.max(1, rect.height);
-      renderer.setSize(width, height, false);
+      renderer.setSize(width, height, true);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
     };
     resize();
+    window.addEventListener("resize", resize);
 
     // Helpers
     const tmp = new THREE.Vector3();
@@ -259,24 +259,32 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
       b.vel.addScaledVector(tmp, invB);
     };
 
-    const respawnAll = () => {
-      for (const b of balls) {
-        b.active = true;
-
-        const dir = new THREE.Vector3(rand(-1, 1), rand(-1, 1), rand(-1, 1));
-        if (dir.lengthSq() < 1e-6) dir.set(1, 0, 0);
-        dir.normalize();
-
-        const dist = rand(0, CLUSTER_RADIUS * 0.55);
-        b.pos.copy(dir.multiplyScalar(dist));
-
-        b.vel.set(rand(-0.12, 0.12), rand(-0.12, 0.12), rand(-0.12, 0.12));
-      }
-    };
-
-    // Cursor cylinder force in XY plane
+    // Cursor cylinder force in XY, speed boosted
     const applyHandForces = (dtSec: number) => {
-      if (!handActive.value) return;
+      if (!handActive.value) {
+        handSpeed = 0;
+        lastHandPos.set(999, 999, 0);
+        return;
+      }
+
+      const dxh = handPos.x - lastHandPos.x;
+      const dyh = handPos.y - lastHandPos.y;
+      const dist = Math.hypot(dxh, dyh);
+      handSpeed = dtSec > 0 ? dist / dtSec : 0;
+      lastHandPos.copy(handPos);
+
+      // Make slow movement subtle, fast swipes powerful
+      const DEADZONE = 2.0; // world units per second, below this do not boost
+      const MAX_SPEED = 18.0;
+
+      // normalize to 0..1 after deadzone
+      const u = clamp01((handSpeed - DEADZONE) / (MAX_SPEED - DEADZONE));
+
+      // nonlinear ramp, keeps low speeds gentle
+      const ramp = u * u;
+
+      const speedBoost = 1 + ramp * 2.8; // up to ~3.8 at max
+      const dynamicRadius = HAND_RADIUS * (1 + ramp * 0.45);
 
       for (const b of balls) {
         if (!b.active) continue;
@@ -285,8 +293,7 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
         const dy = b.pos.y - handPos.y;
 
         const d = Math.hypot(dx, dy);
-        const reach = HAND_RADIUS + b.r;
-
+        const reach = dynamicRadius + b.r;
         if (d >= reach) continue;
 
         const inv = 1 / (d || 1);
@@ -294,7 +301,7 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
         const ny = dy * inv;
 
         const t = clamp01(1 - d / reach);
-        const strength = HAND_STRENGTH * t * t;
+        const strength = HAND_STRENGTH * speedBoost * t * t;
 
         b.vel.x += nx * strength * dtSec;
         b.vel.y += ny * strength * dtSec;
@@ -303,7 +310,7 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
       }
     };
 
-    // Init matrices
+    // Init
     for (const b of balls) applyInstance(b);
     purpleMesh.instanceMatrix.needsUpdate = true;
     goldMesh.instanceMatrix.needsUpdate = true;
@@ -311,46 +318,49 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
     const clock = new THREE.Clock();
     let raf: number | null = null;
 
-    // Track whether we were in cluster-ish state recently, used for respawn
-    let wasCluster = true;
+    // Prevent outward burst while scrolling back up
+    let prevS = 0;
+    let returnModeFrames = 0;
 
     const step = () => {
       const dtSec = clamp(clock.getDelta(), 0.008, 0.03);
       const dt = dtSec * 60;
 
       const s = clamp01(scatterAmountRef.current);
+      const ds = s - prevS;
+      prevS = s;
 
-      const isClusterish = s < REVIVE_THRESHOLD;
-      if (isClusterish && !wasCluster) {
-        respawnAll();
-      }
-      wasCluster = isClusterish;
+      // if scatter decreases, we are going back up, reform instead of pushing outward
+      if (ds < -0.0005) returnModeFrames = 20;
+      if (returnModeFrames > 0) returnModeFrames--;
 
-      if (isClusterish) {
-        // Cluster mode
+      const shouldCluster = s < 0.02 || returnModeFrames > 0;
+
+      if (shouldCluster) {
         applyHandForces(dtSec);
 
         for (const b of balls) {
-          // Pull to center
-          tmp.copy(CENTER).sub(b.pos);
-          b.vel.addScaledVector(tmp, GRAVITY * dtSec);
+          const pull = returnModeFrames > 0 ? GRAVITY * 1.8 : GRAVITY;
 
-          // Damping
-          b.vel.multiplyScalar(Math.pow(DRAG_CLUSTER, dt));
+          tmp.copy(CENTER).sub(b.pos);
+          b.vel.addScaledVector(tmp, pull * dtSec);
+
+          const drag = returnModeFrames > 0 ? 0.965 : DRAG_CLUSTER;
+          b.vel.multiplyScalar(Math.pow(drag, dt));
+
           capSpeed(b.vel, MAX_SPEED_CLUSTER);
 
-          // Integrate
           b.pos.addScaledVector(b.vel, dt);
 
-          // Contain in sphere
           const d = b.pos.length();
           if (d > CLUSTER_RADIUS) {
             b.pos.multiplyScalar(CLUSTER_RADIUS / (d || 1));
             b.vel.multiplyScalar(0.85);
           }
+
+          b.active = true;
         }
 
-        // Collisions
         for (let pass = 0; pass < COLLISION_PASSES; pass++) {
           for (let i = 0; i < balls.length; i++) {
             for (let j = i + 1; j < balls.length; j++) {
@@ -358,49 +368,26 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
             }
           }
         }
-
-        // Ensure alive
-        for (const b of balls) b.active = true;
       } else {
-        // Scatter mode, continuous, proportional to s
-        let activeCount = 0;
-
+        // scatter outward
         for (const b of balls) {
           if (!b.active) continue;
-          activeCount++;
 
-          // Outward direction
           tmp.copy(b.pos);
           const len = tmp.length();
           if (len > 1e-6) tmp.multiplyScalar(1 / len);
           else tmp.set(rand(-1, 1), rand(-1, 1), rand(-1, 1)).normalize();
 
-          // Stronger outward acceleration as s increases
           b.vel.addScaledVector(tmp, OUTWARD_FORCE * s * dtSec);
-
-          // Lighter drag as scatter increases
-          const drag = DRAG_SCATTER + (1 - DRAG_SCATTER) * (1 - s);
-          b.vel.multiplyScalar(Math.pow(drag, dt));
-
+          b.vel.multiplyScalar(Math.pow(DRAG_SCATTER, dt));
           capSpeed(b.vel, MAX_SPEED_SCATTER);
 
           b.pos.addScaledVector(b.vel, dt);
 
           if (b.pos.length() > OFFSCREEN_KILL_RADIUS) b.active = false;
         }
-
-        // If all gone, stop work until s drops and we respawn
-        if (activeCount === 0) {
-          for (const b of balls) applyInstance(b);
-          purpleMesh.instanceMatrix.needsUpdate = true;
-          goldMesh.instanceMatrix.needsUpdate = true;
-          renderer.render(scene, camera);
-          raf = null;
-          return;
-        }
       }
 
-      // Update matrices
       for (const b of balls) applyInstance(b);
       purpleMesh.instanceMatrix.needsUpdate = true;
       goldMesh.instanceMatrix.needsUpdate = true;
@@ -411,13 +398,10 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
 
     raf = requestAnimationFrame(step);
 
-    const onResize = () => resize();
-    window.addEventListener("resize", onResize);
-
     return () => {
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("scroll", onScrollOrResize);
+      window.removeEventListener("scroll", onScroll);
 
       if (raf) cancelAnimationFrame(raf);
 
