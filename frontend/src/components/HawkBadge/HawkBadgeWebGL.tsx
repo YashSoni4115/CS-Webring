@@ -56,7 +56,6 @@ export default function HawkBadgeWebGL() {
     let userRotY = 0;
     let velY = 0;
 
-    let userHasInteracted = false;
 
     const ROT_SPEED = 0.005;
     const DAMPING = 0.95; // friction, lower = slows down faster
@@ -64,7 +63,6 @@ export default function HawkBadgeWebGL() {
 
     const onPointerDown = (e: PointerEvent) => {
       dragging = true;
-      userHasInteracted = true;
       lastX = e.clientX;
       lastY = e.clientY;
       try {
@@ -78,7 +76,6 @@ export default function HawkBadgeWebGL() {
       if (!dragging) return;
 
       const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
       lastX = e.clientX;
       lastY = e.clientY;
 
