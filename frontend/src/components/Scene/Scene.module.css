@@ -17,13 +17,14 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   color: #fff;
-  text-shadow: 0 2px 16px #0005, 0 1px 0 #4B2E83;
+  text-shadow: 0 2px 16px #0005, 0 1px 0 var(--wlu-purple);
   margin: 0;
   padding: 0;
   background: none;
   border-radius: 0;
   user-select: none;
 }
+
 .scene {
   height: 260vh;
   position: relative;
@@ -72,11 +73,9 @@
   border: none;
   background: #fff;
   box-shadow: 0 2px 16px 0 rgba(80, 60, 140, 0.18);
-
-  color: #4B2E83;
+  color: var(--wlu-purple);
   font-size: 1.5rem;
   line-height: 1;
-
   cursor: pointer;
 
   animation: arrowBounce 1.6s ease-in-out infinite;

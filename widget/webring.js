@@ -4,14 +4,13 @@
  * 
  * Usage: Add this to your site:
  *   <div id="cs-webring"></div>
- *   <script src="https://cs-webring-fju6a2fmj-devanshjain3245-8868s-projects.vercel.app/widget/webring.js"></script>
+ *   <script src="https://cs-webring.xyz/widget/webring.js"></script>
  */
 
 (function() {
     'use strict';
 
-    // CONFIGURE THIS: Set to your hosted webring URL
-    const WEBRING_BASE_URL = 'https://cs-webring-fju6a2fmj-devanshjain3245-8868s-projects.vercel.app';
+    const WEBRING_BASE_URL = 'https://cs-webring.xyz';
     const WEBRING_DATA_URL = WEBRING_BASE_URL + '/data/webring.json';
     
     class WebringWidget {
@@ -49,15 +48,15 @@
         }
 
         getPrevSite() {
-            if (this.sites.length === 0) return null;
-            const index = this.currentIndex <= 0 ? this.sites.length - 1 : this.currentIndex - 1;
-            return this.sites[index];
+            if (this.currentIndex === -1 || this.sites.length === 0) return null;
+            const prevIndex = (this.currentIndex - 1 + this.sites.length) % this.sites.length;
+            return this.sites[prevIndex];
         }
 
         getNextSite() {
-            if (this.sites.length === 0) return null;
-            const index = this.currentIndex >= this.sites.length - 1 ? 0 : this.currentIndex + 1;
-            return this.sites[index];
+            if (this.currentIndex === -1 || this.sites.length === 0) return null;
+            const nextIndex = (this.currentIndex + 1) % this.sites.length;
+            return this.sites[nextIndex];
         }
 
         getRandomSite() {
@@ -100,13 +99,16 @@
             `;
 
             // Add random click handler
-            container.querySelector('.webring-random').addEventListener('click', (e) => {
-                e.preventDefault();
-                const randomSite = this.getRandomSite();
-                if (randomSite) {
-                    window.location.href = randomSite.url;
-                }
-            });
+            const randomLink = container.querySelector('.webring-random');
+            if (randomLink) {
+                randomLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const randomSite = this.getRandomSite();
+                    if (randomSite) {
+                        window.location.href = randomSite.url;
+                    }
+                });
+            }
         }
     }
 
@@ -119,7 +121,4 @@
             window.csWebring = new WebringWidget();
         }
     });
-
-    // Expose for manual initialization
-    window.WebringWidget = WebringWidget;
 })();

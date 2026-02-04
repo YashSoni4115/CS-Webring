@@ -1,58 +1,78 @@
-# 🔗 CS-DS Webring
+![active development](https://img.shields.io/badge/active%20dev-yes-brightgreen.svg)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Devansh015/cs-webring.svg)
 
-A webring connecting Computer Science and Data Science blogs, personal sites, and portfolios.
+# 🔗 CS Webring
+<img alt="cs-webring icon" src="./assets/logo/logo_bg.svg" width="100" height="100">
 
-## What is a Webring?
+💻 A webring for Computer Science (CS) students at our university.
 
-A webring is a collection of websites linked together in a circular structure. Visitors can navigate from one site to another using navigation links, discovering new content along the way!
+🌐 **Live Site:** [cs-webring.vercel.app](https://cs-webring.vercel.app)
 
-## 🚀 Join the Webring
+🔵 [What's a webring?](#whats-a-webring) / [How do I join?](#how-do-i-join) / [Embed the Widget](#embed-the-widget) / [Credits](#credits)
 
-Want to add your site? Follow these steps:
+---
 
-### Requirements
+## What's a webring?
 
-- Your site must be related to Computer Science, Data Science, or related fields
-- It should have original content (blog posts, projects, tutorials, etc.)
-- Must be safe for work and follow our [Code of Conduct](CONTRIBUTING.md)
+A webring is a group of websites linked together in a circular manner, centered around a common theme. They were popular in the 90s as a discovery mechanism. The CS Webring connects personal sites and portfolios of current and former CS students, making them more discoverable.
 
-### How to Join
+---
 
-1. **Fork this repository**
-2. **Edit `data/webring.json`** and add your site:
-   ```json
-   {
-     "id": "your-site-id",
-     "name": "Your Site Name",
-     "url": "https://yoursite.com",
-     "description": "A brief description of your site",
-     "owner": "Your Name",
-     "added": "YYYY-MM-DD"
-   }
-   ```
-3. **Submit a Pull Request**
-4. **Add the widget to your site** (see below)
+## How do I join?
 
-## 🎨 Embed the Widget
+### Step 1: Submit a Pull Request
 
-Add this snippet to your website:
+1. Fork this repository
+2. Add your site to `data/webring.json`:
+
+```json
+{
+  "id": "your-name",
+  "name": "Your Name",
+  "url": "https://yoursite.com",
+  "description": "Short description of your site",
+  "owner": "Your Name",
+  "added": "2026-02-03"
+}
+```
+
+3. Open a [pull request](https://github.com/Devansh015/cs-webring/pulls) with:
+   - Your full name
+   - Cohort/graduation year
+   - Full website URL
+   - Link to verify identity (GitHub, LinkedIn, etc.)
+
+Your PR will be approved if you meet all requirements and there's no inappropriate content.
+
+### Step 2: Add the Widget to Your Site (Encouraged!)
+
+Once approved, add the webring widget to your site so visitors can discover other members.
+
+---
+
+## Embed the Widget
+
+Add this snippet anywhere on your website:
 
 ```html
-<!-- CS-DS Webring Widget -->
-<div id="cs-ds-webring"></div>
-<link rel="stylesheet" href="https://your-domain.com/widget/themes.css">
-<script src="https://your-domain.com/widget/webring.js"></script>
+<div id="cs-webring"></div>
+<link rel="stylesheet" href="https://cs-webring.vercel.app/widget/themes.css">
+<script src="https://cs-webring.vercel.app/widget/webring.js"></script>
 ```
+
+The widget auto-detects your site and displays **← Prev | Home | Random | Next →** navigation.
 
 ### Widget Themes
 
-Choose a theme that matches your site:
+Choose from 5 built-in themes:
 
-- `default` - Clean, light theme
-- `dark` - Dark mode friendly
-- `minimal` - Borderless, adapts to your styles
-- `neon` - Cyberpunk vibes
-- `retro` - 90s nostalgia
+| Theme | Description |
+|-------|-------------|
+| `default` | Clean, light theme |
+| `dark` | Dark mode friendly |
+| `minimal` | Borderless, adapts to your styles |
+| `neon` | Cyberpunk vibes |
+| `retro` | 90s nostalgia |
 
 ```html
 <script>
@@ -60,55 +80,27 @@ Choose a theme that matches your site:
 </script>
 ```
 
-## 📁 Project Structure
+### Custom Container
 
+```html
+<div id="my-webring-spot"></div>
+<script>
+  new WebringWidget({ 
+    theme: 'minimal',
+    container: '#my-webring-spot'
+  });
+</script>
 ```
-cs-ds-webring/
-├── public/              # Landing page and directory
-│   ├── index.html
-│   ├── styles.css
-│   └── favicon.ico
-├── data/
-│   └── webring.json     # Source of truth for all sites
-├── widget/
-│   ├── webring.js       # Embeddable navigation widget
-│   └── themes.css       # Widget themes
-├── frontend/            # Future React app
-├── scripts/
-│   └── validate.js      # JSON validation script
-├── README.md
-├── CONTRIBUTING.md
-└── .gitignore
-```
-
-## 🛠️ Development
-
-### Validate Sites
-
-```bash
-node scripts/validate.js
-```
-
-### Local Development
-
-Serve the `public/` directory with any static file server:
-
-```bash
-# Using Python
-python -m http.server 8000 --directory public
-
-# Using Node.js (npx)
-npx serve public
-```
-
-## 📜 License
-
-MIT License - Feel free to fork and create your own webring!
-
-## 🤝 Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on submitting your site.
 
 ---
 
-**Made with ❤️ by the CS-DS community**
+## Credits 
+
+* Inspired by [SE Webring](https://se-webring.xyz/) by Simran Thind and Janakitti Ratana-Rueangsri.
+* Fuzzy search powered by [Fuse.js](https://fusejs.io/).
+* 3D animations with [Three.js](https://threejs.org/).
+* Built with [React](https://react.dev/) + [Vite](https://vite.dev/).
+
+---
+
+**Authors:** Update with your name(s) here

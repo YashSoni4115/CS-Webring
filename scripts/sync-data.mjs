@@ -5,10 +5,8 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// repo root is one level above /scripts
 const repoRoot = path.resolve(__dirname, "..");
 
-// source and destination
 const src = path.resolve(repoRoot, "data/webring.json");
 const dest = path.resolve(repoRoot, "frontend/public/webring.json");
 

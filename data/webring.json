@@ -1,23 +1,22 @@
 {
   "name": "CS Webring",
   "description": "A webring connecting CS student personal websites",
-  "homepage": "https://Devansh015.github.io/cs-ds-webring",
   "sites": [
     {
       "id": "devansh-jain",
       "name": "Devansh Jain",
-      "url": "https://devanshjain.me",
-      "description": "Personal website",
+      "url": "https://www.devanshjain.me/",
+      "description": "Personal Website",
       "owner": "Devansh Jain",
-      "added": "2026-01-29"
+      "added": "2026-02-03"
     },
     {
-      "id": "yash-ns",
-      "name": "Yash NS",
-      "url": "https://yashns.me",
-      "description": "Personal website",
-      "owner": "Yash NS",
-      "added": "2026-01-29"
+      "id": "yash-soni",
+      "name": "Yash Soni",
+      "url": "https://yashns.me/",
+      "description": "Personal Website",
+      "owner": "Yash Soni",
+      "added": "2026-02-03"
     }
   ]
 }

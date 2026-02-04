@@ -4,8 +4,7 @@
   padding-top: 6vh;
   padding-bottom: 10vh;
   color: rgba(255, 255, 255, 0.82);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
-    monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 .searchRow {
@@ -66,37 +65,28 @@
 
 .item:hover {
   opacity: 1;
-  transform: translate3d(0, -1px, 0);
+  transform: translateY(-2px);
 }
 
-@media (max-width: 1100px) {
-  .grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-}
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
   .grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    row-gap: 44px;
-  }
-}
-@media (max-width: 650px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: 34px;
-    column-gap: 26px;
-  }
-  .item {
-    font-size: 10px;
-  }
-  .search {
-    font-size: 10px;
   }
 }
 
-.noResults {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
+@media (max-width: 800px) {
+  .wrap {
+    width: 90vw;
+  }
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 24px;
+    row-gap: 36px;
+  }
+}
+
+@media (max-width: 500px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

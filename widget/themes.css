@@ -1,6 +1,5 @@
 /**
- * CS-DS Webring Widget Themes
- * Include this CSS to style the webring widget
+ * CS Webring Widget Themes
  */
 
 /* Base Widget Styles */
@@ -41,11 +40,8 @@
 /* Default Theme */
 .webring-theme-default {
     background: #f5f5f5;
-    border: 1px solid #ddd;
-}
-
-.webring-theme-default .webring-label {
-    color: #666;
+    border: 1px solid #e0e0e0;
+    color: #333;
 }
 
 .webring-theme-default .webring-link {
@@ -61,19 +57,16 @@
 .webring-theme-dark {
     background: #1a1a2e;
     border: 1px solid #333;
-}
-
-.webring-theme-dark .webring-label {
-    color: #888;
+    color: #e0e0e0;
 }
 
 .webring-theme-dark .webring-link {
-    color: #a78bfa;
+    color: #a5d6ff;
 }
 
 .webring-theme-dark .webring-link:hover {
-    background: #a78bfa;
-    color: #1a1a2e;
+    background: #333;
+    color: #fff;
 }
 
 /* Minimal Theme */
@@ -83,60 +76,45 @@
     padding: 0.5rem;
 }
 
-.webring-theme-minimal .webring-label {
+.webring-theme-minimal .webring-link {
     color: inherit;
     opacity: 0.7;
 }
 
-.webring-theme-minimal .webring-link {
-    color: inherit;
-    border-bottom: 1px dashed currentColor;
-    border-radius: 0;
-}
-
 .webring-theme-minimal .webring-link:hover {
-    border-bottom-style: solid;
+    opacity: 1;
 }
 
 /* Neon Theme */
 .webring-theme-neon {
-    background: #0d0d0d;
-    border: 2px solid #0ff;
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-}
-
-.webring-theme-neon .webring-label {
-    color: #0ff;
-    text-shadow: 0 0 5px #0ff;
+    background: #0a0a0f;
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
 }
 
 .webring-theme-neon .webring-link {
-    color: #f0f;
-    text-shadow: 0 0 5px #f0f;
+    color: #00ff88;
 }
 
 .webring-theme-neon .webring-link:hover {
-    background: #f0f;
-    color: #0d0d0d;
-    text-shadow: none;
+    background: #00ff88;
+    color: #0a0a0f;
 }
 
 /* Retro Theme */
 .webring-theme-retro {
     background: #c0c0c0;
-    border: 3px outset #fff;
-    font-family: 'MS Sans Serif', Geneva, sans-serif;
-}
-
-.webring-theme-retro .webring-label {
-    color: #000080;
+    border: 2px outset #fff;
+    color: #000;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
 }
 
 .webring-theme-retro .webring-link {
-    color: #000080;
+    color: #0000ff;
     text-decoration: underline;
 }
 
 .webring-theme-retro .webring-link:hover {
-    color: #800080;
+    color: #ff0000;
 }

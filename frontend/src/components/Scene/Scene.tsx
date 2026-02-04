@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import BallFieldWebGL from "../BallFieldWebGL/BallFieldWebGL";
 import MembersList from "../MembersList/MembersList";
 import HawkBadgeWebGL from "../HawkBadge/HawkBadgeWebGL";
-import { sites } from "../../../../data/webring.json";
+import { sites } from "../../data/webring";
 import styles from "./Scene.module.css";
 import { useSmoothScrollProgress } from "../../hooks/useSmoothScrollProgress";
 
