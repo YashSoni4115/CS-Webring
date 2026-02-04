@@ -1,0 +1,21 @@
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+.hit {
+  width: 320px;
+  height: 320px;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.hit canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

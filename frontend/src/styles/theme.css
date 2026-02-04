@@ -1,0 +1,12 @@
+:root {
+  --wlu-purple: #4B2E83;
+  --wlu-gold: #FDB913;
+
+  --bg-main: #0f1020;
+  --bg-card: #17182f;
+  --text-main: #ffffff;
+  --text-muted: #b8b8d1;
+
+  --ring-neutral-1: rgba(255, 255, 255, 0.16);
+  --ring-neutral-2: rgba(255, 255, 255, 0.10);
+}

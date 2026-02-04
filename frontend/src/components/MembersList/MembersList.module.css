@@ -1,0 +1,92 @@
+.wrap {
+  width: min(900px, 66vw);
+  margin: 0 auto;
+  padding-top: 6vh;
+  padding-bottom: 10vh;
+  color: rgba(255, 255, 255, 0.82);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon {
+  font-size: 18px;
+  opacity: 0.8;
+  transition: filter 0.3s ease;
+}
+
+.iconFocused {
+  filter: brightness(0) saturate(100%) invert(93%) sepia(93%) saturate(30%) hue-rotate(125deg) brightness(107%) contrast(106%);
+}
+
+.search {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  padding: 6px 2px;
+}
+
+.search::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.rule {
+  margin-top: 8px;
+  height: 1px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.grid {
+  margin-top: 46px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  column-gap: 40px;
+  row-gap: 56px;
+}
+
+.item {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-align: left;
+  transition: opacity 120ms ease, transform 120ms ease;
+  opacity: 0.78;
+}
+
+.item:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .wrap {
+    width: 90vw;
+  }
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 24px;
+    row-gap: 36px;
+  }
+}
+
+@media (max-width: 500px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

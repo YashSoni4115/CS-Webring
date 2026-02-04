@@ -1,0 +1,31 @@
+{
+  "name": "CS Webring",
+  "description": "A webring connecting CS student personal websites",
+  "homepage": "https://cs-webring.xyz",
+  "sites": [
+    {
+      "id": "your-name",
+      "name": "Your Name",
+      "url": "https://example.com",
+      "description": "Personal website",
+      "owner": "Your Name",
+      "added": "2026-02-03"
+    },
+    {
+      "id": "devansh-jain",
+      "name": "Devansh Jain",
+      "url": "https://www.devanshjain.me/",
+      "description": "Personal Website",
+      "owner": "Devansh Jain",
+      "added": "2026-02-03"
+    },
+    {
+      "id": "yash-soni",
+      "name": "Yash Soni",
+      "url": "https://yashns.me/",
+      "description": "Personal Website",
+      "owner": "Yash Soni",
+      "added": "2026-02-03"
+    }
+  ]
+}

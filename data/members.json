@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Your Name",
+    "year": 2026,
+    "website": "https://example.com/"
+  },
+  {
+    "name": "Jane Doe",
+    "year": 2027,
+    "website": "https://janedoe.dev/"
+  },
+  {
+    "name": "John Smith",
+    "year": 2025,
+    "website": "https://johnsmith.io/"
+  }
+]
