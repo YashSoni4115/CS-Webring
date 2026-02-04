@@ -1,16 +1,8 @@
 {
   "name": "CS Webring",
   "description": "A webring connecting CS student personal websites",
-  "homepage": "https://cs-webring.xyz",
+  "homepage": "https://cs-webring.vercel.app",
   "sites": [
-    {
-      "id": "your-name",
-      "name": "Your Name",
-      "url": "https://example.com",
-      "description": "Personal website",
-      "owner": "Your Name",
-      "added": "2026-02-03"
-    },
     {
       "id": "devansh-jain",
       "name": "Devansh Jain",
