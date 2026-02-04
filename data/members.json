@@ -1,17 +1,17 @@
 [
   {
-    "name": "Your Name",
-    "year": 2026,
-    "website": "https://example.com/"
-  },
-  {
-    "name": "Jane Doe",
+    "name": "Devansh Jain",
     "year": 2027,
-    "website": "https://janedoe.dev/"
+    "website": "https://www.devanshjain.me/"
   },
   {
-    "name": "John Smith",
-    "year": 2025,
-    "website": "https://johnsmith.io/"
+    "name": "Yash Soni",
+    "year": 2027,
+    "website": "https://yashns.me/"
+  },
+  {
+    "name": "Devansh Jain",
+    "year": 2027,
+    "website": "https://www.devanshjain.me/"
   }
 ]
