@@ -12,27 +12,35 @@ type Ball = {
 };
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+const clamp01 = (n: number) => clamp(n, 0, 1);
 const rand = (min: number, max: number) => Math.random() * (max - min) + min;
 
 export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: number }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const scatterRef = useRef(scatterAmount);
 
-  useEffect(() => {
-    scatterRef.current = scatterAmount;
-  }, [scatterAmount]);
+  const scatterAmountRef = useRef(0);
+  scatterAmountRef.current = clamp01(scatterAmount);
 
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
 
+    // Scene
     const scene = new THREE.Scene();
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
-    camera.position.z = 600;
+    // Camera
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
+    camera.position.set(0, 0, 16);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance",
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // @ts-ignore
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearAlpha(0);
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
@@ -83,87 +91,331 @@ export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: numbe
     scene.add(purpleMesh);
     scene.add(goldMesh);
 
-    // Ball state
-    const balls: Ball[] = [];
-    let purpleIdx = 0;
-    let goldIdx = 0;
+    // Physics tuning
+    const CENTER = new THREE.Vector3(0, 0, 0);
 
-    for (let i = 0; i < COUNT; i++) {
-      const isGold = i < goldCount;
-      const r = rand(28, 56);
-      const theta = rand(0, Math.PI * 2);
-      const phi = rand(0, Math.PI);
-      const dist = rand(40, 180);
-      const x = dist * Math.sin(phi) * Math.cos(theta);
-      const y = dist * Math.sin(phi) * Math.sin(theta);
-      const z = dist * Math.cos(phi);
+    const CLUSTER_RADIUS = 5.2;
+    const GRAVITY = 0.22;
+    const DRAG_CLUSTER = 0.985;
 
-      balls.push({
-        active: true,
-        r,
-        pos: new THREE.Vector3(x, y, z),
-        vel: new THREE.Vector3(rand(-0.4, 0.4), rand(-0.4, 0.4), rand(-0.4, 0.4)),
-        isGold,
-        meshIndex: isGold ? goldIdx++ : purpleIdx++,
-      });
-    }
+    const RESTITUTION = 0.72;
+    const COLLISION_PASSES = 1;
+
+    const OUTWARD_FORCE = 6.5;
+    const DRAG_SCATTER = 0.997;
+    const MAX_SPEED_CLUSTER = 1.7;
+    const MAX_SPEED_SCATTER = 12.0;
+
+    const OFFSCREEN_KILL_RADIUS = 20;
+
+    // Ball sizes
+    const R_MIN = 0.48;
+    const R_MAX = 0.95;
+
+    // Mouse “hand” cylinder
+    const HAND_RADIUS = 2.2;
+    const HAND_STRENGTH = 10.5;
+    const HAND_DAMPING = 0.85;
+
+    // Mouse mapping to z=0 plane
+    const pointerNDC = new THREE.Vector2(0, 0);
+    const handPos = new THREE.Vector3(999, 999, 0);
+    const handActive = { value: false };
+
+    const raycaster = new THREE.Raycaster();
+    const planeZ0 = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+
+    const lastHandPos = new THREE.Vector3(999, 999, 0);
+    let handSpeed = 0;
+
+    const updateHandFromClientXY = (clientX: number, clientY: number) => {
+      const rect = host.getBoundingClientRect();
+      if (rect.width <= 1 || rect.height <= 1) return;
+
+      const inside =
+        clientX >= rect.left &&
+        clientX <= rect.right &&
+        clientY >= rect.top &&
+        clientY <= rect.bottom;
+
+      if (!inside) {
+        handActive.value = false;
+        handPos.set(999, 999, 0);
+        return;
+      }
+
+      const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -(((clientY - rect.top) / rect.height) * 2 - 1);
+
+      pointerNDC.set(x, y);
+      raycaster.setFromCamera(pointerNDC, camera);
+      raycaster.ray.intersectPlane(planeZ0, handPos);
+      handActive.value = true;
+    };
+
+    const onPointerMove = (ev: PointerEvent) => updateHandFromClientXY(ev.clientX, ev.clientY);
+
+    const onScroll = () => {
+      handActive.value = false;
+      handPos.set(999, 999, 0);
+      lastHandPos.set(999, 999, 0);
+      handSpeed = 0;
+    };
+
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    // Balls
+    let pIdx = 0;
+    let gIdx = 0;
+
+    const balls: Ball[] = Array.from({ length: COUNT }).map((_, i) => {
+      const isGold = i % 3 === 2;
+      const meshIndex = isGold ? gIdx++ : pIdx++;
+
+      const r = rand(R_MIN, R_MAX);
+
+      const dir = new THREE.Vector3(rand(-1, 1), rand(-1, 1), rand(-1, 1));
+      if (dir.lengthSq() < 1e-6) dir.set(1, 0, 0);
+      dir.normalize();
+
+      const dist = rand(0, CLUSTER_RADIUS * 0.55);
+      const pos = dir.multiplyScalar(dist);
+
+      const vel = new THREE.Vector3(rand(-0.12, 0.12), rand(-0.12, 0.12), rand(-0.12, 0.12));
+
+      return { active: true, r, pos, vel, isGold, meshIndex };
+    });
 
     const dummy = new THREE.Object3D();
 
-    const updateInstances = () => {
-      const scatter = scatterRef.current;
-      for (const ball of balls) {
-        if (!ball.active) continue;
-
-        // Apply velocity based on scatter
-        const speed = 2 + scatter * 14;
-        ball.pos.add(ball.vel.clone().multiplyScalar(speed));
-
-        // Fade out as they go far
-        const dist = ball.pos.length();
-        if (dist > 1200) ball.active = false;
-
-        dummy.position.copy(ball.pos);
-        dummy.scale.setScalar(ball.r);
+    const applyInstance = (b: Ball) => {
+      if (!b.active) {
+        dummy.position.set(0, 0, 0);
+        dummy.scale.set(0, 0, 0);
         dummy.updateMatrix();
+        if (b.isGold) goldMesh.setMatrixAt(b.meshIndex, dummy.matrix);
+        else purpleMesh.setMatrixAt(b.meshIndex, dummy.matrix);
+        return;
+      }
 
-        if (ball.isGold) {
-          goldMesh.setMatrixAt(ball.meshIndex, dummy.matrix);
-        } else {
-          purpleMesh.setMatrixAt(ball.meshIndex, dummy.matrix);
+      dummy.position.copy(b.pos);
+      dummy.scale.setScalar(b.r);
+      dummy.updateMatrix();
+
+      if (b.isGold) goldMesh.setMatrixAt(b.meshIndex, dummy.matrix);
+      else purpleMesh.setMatrixAt(b.meshIndex, dummy.matrix);
+    };
+
+    const resize = () => {
+      const rect = host.getBoundingClientRect();
+      const width = Math.max(1, rect.width);
+      const height = Math.max(1, rect.height);
+      renderer.setSize(width, height, true);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    // Helpers
+    const tmp = new THREE.Vector3();
+    const n = new THREE.Vector3();
+
+    const capSpeed = (v: THREE.Vector3, max: number) => {
+      const sp = v.length();
+      if (sp > max) v.multiplyScalar(max / (sp || 1));
+    };
+
+    const resolveCollision = (a: Ball, b: Ball) => {
+      n.copy(b.pos).sub(a.pos);
+      const dist = n.length();
+      const minDist = a.r + b.r;
+
+      if (dist <= 0 || dist >= minDist) return;
+
+      n.multiplyScalar(1 / dist);
+
+      const overlap = minDist - dist;
+
+      const massA = a.r * a.r * a.r;
+      const massB = b.r * b.r * b.r;
+
+      const invA = 1 / massA;
+      const invB = 1 / massB;
+      const invSum = invA + invB;
+
+      a.pos.addScaledVector(n, -overlap * (invA / invSum));
+      b.pos.addScaledVector(n, overlap * (invB / invSum));
+
+      tmp.copy(b.vel).sub(a.vel);
+      const velAlongNormal = tmp.dot(n);
+      if (velAlongNormal > 0) return;
+
+      const j = (-(1 + RESTITUTION) * velAlongNormal) / invSum;
+
+      tmp.copy(n).multiplyScalar(j);
+      a.vel.addScaledVector(tmp, -invA);
+      b.vel.addScaledVector(tmp, invB);
+    };
+
+    // Cursor cylinder force in XY, speed boosted
+    const applyHandForces = (dtSec: number) => {
+      if (!handActive.value) {
+        handSpeed = 0;
+        lastHandPos.set(999, 999, 0);
+        return;
+      }
+
+      const dxh = handPos.x - lastHandPos.x;
+      const dyh = handPos.y - lastHandPos.y;
+      const dist = Math.hypot(dxh, dyh);
+      handSpeed = dtSec > 0 ? dist / dtSec : 0;
+      lastHandPos.copy(handPos);
+
+      // Make slow movement subtle, fast swipes powerful
+      const DEADZONE = 2.0; // world units per second, below this do not boost
+      const MAX_SPEED = 18.0;
+
+      // normalize to 0..1 after deadzone
+      const u = clamp01((handSpeed - DEADZONE) / (MAX_SPEED - DEADZONE));
+
+      // nonlinear ramp, keeps low speeds gentle
+      const ramp = u * u;
+
+      const speedBoost = 1 + ramp * 2.8; // up to ~3.8 at max
+      const dynamicRadius = HAND_RADIUS * (1 + ramp * 0.45);
+
+      for (const b of balls) {
+        if (!b.active) continue;
+
+        const dx = b.pos.x - handPos.x;
+        const dy = b.pos.y - handPos.y;
+
+        const d = Math.hypot(dx, dy);
+        const reach = dynamicRadius + b.r;
+        if (d >= reach) continue;
+
+        const inv = 1 / (d || 1);
+        const nx = dx * inv;
+        const ny = dy * inv;
+
+        const t = clamp01(1 - d / reach);
+        const strength = HAND_STRENGTH * speedBoost * t * t;
+
+        b.vel.x += nx * strength * dtSec;
+        b.vel.y += ny * strength * dtSec;
+
+        b.vel.multiplyScalar(Math.pow(HAND_DAMPING, dtSec * 60));
+      }
+    };
+
+    // Init
+    for (const b of balls) applyInstance(b);
+    purpleMesh.instanceMatrix.needsUpdate = true;
+    goldMesh.instanceMatrix.needsUpdate = true;
+
+    const clock = new THREE.Clock();
+    let raf: number | null = null;
+
+    // Prevent outward burst while scrolling back up
+    let prevS = 0;
+    let returnModeFrames = 0;
+
+    const step = () => {
+      const dtSec = clamp(clock.getDelta(), 0.008, 0.03);
+      const dt = dtSec * 60;
+
+      const s = clamp01(scatterAmountRef.current);
+      const ds = s - prevS;
+      prevS = s;
+
+      // if scatter decreases, we are going back up, reform instead of pushing outward
+      if (ds < -0.0005) returnModeFrames = 20;
+      if (returnModeFrames > 0) returnModeFrames--;
+
+      const shouldCluster = s < 0.02 || returnModeFrames > 0;
+
+      if (shouldCluster) {
+        applyHandForces(dtSec);
+
+        for (const b of balls) {
+          const pull = returnModeFrames > 0 ? GRAVITY * 1.8 : GRAVITY;
+
+          tmp.copy(CENTER).sub(b.pos);
+          b.vel.addScaledVector(tmp, pull * dtSec);
+
+          const drag = returnModeFrames > 0 ? 0.965 : DRAG_CLUSTER;
+          b.vel.multiplyScalar(Math.pow(drag, dt));
+
+          capSpeed(b.vel, MAX_SPEED_CLUSTER);
+
+          b.pos.addScaledVector(b.vel, dt);
+
+          const d = b.pos.length();
+          if (d > CLUSTER_RADIUS) {
+            b.pos.multiplyScalar(CLUSTER_RADIUS / (d || 1));
+            b.vel.multiplyScalar(0.85);
+          }
+
+          b.active = true;
+        }
+
+        for (let pass = 0; pass < COLLISION_PASSES; pass++) {
+          for (let i = 0; i < balls.length; i++) {
+            for (let j = i + 1; j < balls.length; j++) {
+              resolveCollision(balls[i], balls[j]);
+            }
+          }
+        }
+      } else {
+        // scatter outward
+        for (const b of balls) {
+          if (!b.active) continue;
+
+          tmp.copy(b.pos);
+          const len = tmp.length();
+          if (len > 1e-6) tmp.multiplyScalar(1 / len);
+          else tmp.set(rand(-1, 1), rand(-1, 1), rand(-1, 1)).normalize();
+
+          b.vel.addScaledVector(tmp, OUTWARD_FORCE * s * dtSec);
+          b.vel.multiplyScalar(Math.pow(DRAG_SCATTER, dt));
+          capSpeed(b.vel, MAX_SPEED_SCATTER);
+
+          b.pos.addScaledVector(b.vel, dt);
+
+          if (b.pos.length() > OFFSCREEN_KILL_RADIUS) b.active = false;
         }
       }
+
+      for (const b of balls) applyInstance(b);
       purpleMesh.instanceMatrix.needsUpdate = true;
       goldMesh.instanceMatrix.needsUpdate = true;
-    };
 
-    // Resize
-    const onResize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    };
-    window.addEventListener("resize", onResize);
-    onResize();
-
-    // Animate
-    let raf: number;
-    const animate = () => {
-      raf = requestAnimationFrame(animate);
-      updateInstances();
       renderer.render(scene, camera);
+      raf = requestAnimationFrame(step);
     };
-    animate();
+
+    raf = requestAnimationFrame(step);
 
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("scroll", onScroll);
+
+      if (raf) cancelAnimationFrame(raf);
+
+      scene.remove(purpleMesh);
+      scene.remove(goldMesh);
+
+      geometry.dispose();
+      purpleMat.dispose();
+      goldMat.dispose();
+
       renderer.dispose();
-      host.removeChild(renderer.domElement);
+      if (renderer.domElement.parentElement === host) host.removeChild(renderer.domElement);
     };
   }, []);
 
-  return <div ref={hostRef} className={styles.webglLayer} />;
+  return <div ref={hostRef} className={styles.webglLayer} aria-hidden="true" />;
 }
