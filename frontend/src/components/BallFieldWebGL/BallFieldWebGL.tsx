@@ -11,6 +11,7 @@ type Ball = {
   meshIndex: number;
 };
 
+const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 const rand = (min: number, max: number) => Math.random() * (max - min) + min;
 
 export default function BallFieldWebGL({ scatterAmount }: { scatterAmount: number }) {
